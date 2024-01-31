@@ -11,6 +11,8 @@ plugins {
 group = "jh"
 version = "0.0.1-SNAPSHOT"
 
+var hibernateVersion = "6.4.1.Final"
+
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
 }
@@ -22,7 +24,13 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("org.hibernate.orm:hibernate-spatial:$hibernateVersion")
+
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+
 	runtimeOnly("org.postgresql:postgresql")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:junit-jupiter")
