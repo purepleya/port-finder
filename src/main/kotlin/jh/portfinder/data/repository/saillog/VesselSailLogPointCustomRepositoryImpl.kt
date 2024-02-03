@@ -1,11 +1,7 @@
-package jh.portfinder.data.repository
+package jh.portfinder.data.repository.saillog
 
 import com.querydsl.core.annotations.QueryProjection
-import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.Expressions
-import com.querydsl.core.types.dsl.SimpleExpression
-import com.querydsl.core.types.dsl.StringPath
-import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jh.portfinder.data.entity.QVesselSailLogPoint.vesselSailLogPoint
 import lombok.RequiredArgsConstructor

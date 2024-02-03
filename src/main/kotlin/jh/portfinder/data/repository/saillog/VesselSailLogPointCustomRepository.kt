@@ -1,6 +1,5 @@
-package jh.portfinder.data.repository
+package jh.portfinder.data.repository.saillog
 
-import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
 interface VesselSailLogPointCustomRepository {

@@ -1,4 +1,4 @@
-package jh.portfinder.data.repository
+package jh.portfinder.data.repository.saillog
 
 import jh.portfinder.data.entity.VesselSailLogPoint
 import org.springframework.data.jpa.repository.JpaRepository
