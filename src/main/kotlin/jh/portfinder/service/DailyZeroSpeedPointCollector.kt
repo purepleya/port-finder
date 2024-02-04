@@ -18,7 +18,7 @@ class DailyZeroSpeedPointCollector (
 
     private val log = logger<DailyZeroSpeedPointCollector>()
     private val hourRange: Int = 3
-    private val reportCount: Int = hourRange * 2 - (hourRange / 2)
+    private val reportCount: Int = 3
 
     fun collect(date: LocalDate) {
         cleanOldData(date)

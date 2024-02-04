@@ -37,8 +37,8 @@ fun groupZeroSpeedPoint(zeroSpeedPointGrouper: ZeroSpeedPointGrouper) {
 	val year = 2024
 	val month = 1
 	val from = LocalDate.of(year, month, 1)
-	val to = from
-//	val to = from.plusMonths(1).minusDays(1)
+//	val to = from
+	val to = from.plusMonths(1).minusDays(1)
 
 	val logger = logger<PortFinderApplication>()
 
