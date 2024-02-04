@@ -45,4 +45,18 @@ class DailyZeroSpeedPointRepositoryImpl (
         }
     }
 
+    override fun read(date: LocalDate): List<Pair<Double, Double>> {
+        val filePath = getFilePath(date)
+        if (!Files.exists(filePath)) {
+            return emptyList()
+        }
+
+        Files.newBufferedReader(filePath).use { reader ->
+            return reader.readLines().map {
+                val (x, y) = it.split(",")
+                Pair(x.toDouble(), y.toDouble())
+            }
+        }
+    }
+
 }

@@ -5,11 +5,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
+import java.time.LocalDate
 import kotlin.io.path.Path
 
 class DailyZeroSpeedPointRepositoryImplTest {
 
-    private val filePath:String = "/port-finder/zero-speed-point-repository"
+    private val filePath:String = "/port-finder/test/zero-speed-point-repository"
 
     @Test
     fun files_function_test() {
@@ -35,5 +36,25 @@ class DailyZeroSpeedPointRepositoryImplTest {
         Files.delete(path)
     }
 
+
+    @Test
+    fun write_read_test() {
+        val repository = DailyZeroSpeedPointRepositoryImpl(filePath)
+
+        val date = LocalDate.of(2024, 1, 1)
+
+        val points = listOf(Pair(1.0, 2.0), Pair(3.0, 4.0))
+
+        repository.write(date, points)
+
+        val readPoints = repository.read(date)
+
+        assertThat(readPoints).isEqualTo(points)
+
+        repository.clean(date)
+
+        val path = Path(filePath)
+        Files.delete(path)
+    }
 
 }
