@@ -33,13 +33,22 @@ class GeoFenceRepositoryImpl(
         }
     }
 
-    override fun read(): List<List<Pair<Double, Double>>> {
-        val path = Path("$repositoryPath")
-        return Files.list(path).map {
-            Files.readAllLines(it).map { line ->
+    override fun read(from: Int, to: Int): List<List<Pair<Double, Double>>> {
+        val result = mutableListOf<List<Pair<Double, Double>>>()
+
+        for (i in from..to - 1) {
+            val filePath = Path("$repositoryPath/group-$i")
+            if (Files.exists(filePath).not()) {
+                continue
+            }
+            val points = Files.readAllLines(filePath).map { line ->
                 val (x, y) = line.split(",")
                 Pair(x.toDouble(), y.toDouble())
             }
-        }.toList()
+
+            result.add(points)
+        }
+
+        return result;
     }
 }

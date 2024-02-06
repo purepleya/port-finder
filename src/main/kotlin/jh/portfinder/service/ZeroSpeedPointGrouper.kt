@@ -2,6 +2,7 @@ package jh.portfinder.service
 
 import jh.portfinder.data.repository.dailyzerospeedpoint.DailyZeroSpeedPointRepository
 import jh.portfinder.data.repository.zerospeedpointgroup.ZeroSpeedPointGroupRepository
+import jh.portfinder.logger
 import jh.portfinder.util.DateProgression
 import jh.portfinder.util.EarthDistanceCalculator
 import org.springframework.stereotype.Service
@@ -12,52 +13,40 @@ class ZeroSpeedPointGrouper (
     private val dailyZeroSpeedPointRepository: DailyZeroSpeedPointRepository,
     private val zeroSpeedPointGroupRepository: ZeroSpeedPointGroupRepository
 ) {
-    val LIMIT_DISTANCE = 0.3 // km
-    val MINIMUM_POINT_COUNT = 3 // minimum number of points to form a group
+    val LIMIT_DISTANCE = 0.4 // km
+    val MINIMUM_POINT_COUNT = 10 // minimum number of points to form a group
 
     operator fun LocalDate.rangeTo(other: LocalDate) = DateProgression(this, other)
-
+    private val log = logger<ZeroSpeedPointGrouper>()
 
 
     fun group(from: LocalDate, to: LocalDate) {
-        val points = read(from, to)
-        val groups: List<Set<Pair<Double, Double>>> = group(points)
-        val filteredGroups: List<Set<Pair<Double, Double>>> = groups.filter { it.size >= MINIMUM_POINT_COUNT }
-        write(from, to, filteredGroups)
-    }
-
-
-    private fun read(from: LocalDate, to: LocalDate): Set<Pair<Double, Double>> {
-        val points = HashSet<Pair<Double, Double>> ()
+        val groups: MutableList<MutableSet<Pair<Double, Double>>> = mutableListOf()
 
         for (date in from..to) {
-            points.addAll(dailyZeroSpeedPointRepository.read(date))
-        }
+            log.info("Grouping zero speed points for $date")
+            val points = dailyZeroSpeedPointRepository
+                            .read(date)
+                            .sortedWith(compareBy({ it.first }, { it.second }))
 
-        return points
-    }
+            for (point in points) {
+                var found = false
+                for (group in groups) {
+                    if (group.any { EarthDistanceCalculator.distance(it.second, it.first, point.second, point.first) < LIMIT_DISTANCE }) {
+                        group.add(point)
+                        found = true
+                        break
+                    }
+                }
 
-
-    private fun group(points: Collection<Pair<Double, Double>>): List<Set<Pair<Double, Double>>> {
-        val sortedPoints = points.sortedWith(compareBy({ it.first }, { it.second }))
-        val pointGroups = mutableListOf<MutableSet<Pair<Double, Double>>>()
-
-        for (point in sortedPoints) {
-            var found = false
-            for (group in pointGroups) {
-                if (group.any { EarthDistanceCalculator.distance(it.second, it.first, point.second, point.first) < LIMIT_DISTANCE }) {
-                    group.add(point)
-                    found = true
-                    break
+                if (!found) {
+                    groups.add(mutableSetOf(point))
                 }
             }
-
-            if (!found) {
-                pointGroups.add(mutableSetOf(point))
-            }
         }
 
-        return pointGroups
+        val filteredGroups: List<Set<Pair<Double, Double>>> = groups.filter { it.size >= MINIMUM_POINT_COUNT }
+        write(from, to, filteredGroups)
     }
 
 
