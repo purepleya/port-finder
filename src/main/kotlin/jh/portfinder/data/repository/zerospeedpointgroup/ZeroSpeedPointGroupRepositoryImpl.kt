@@ -28,4 +28,22 @@ class ZeroSpeedPointGroupRepositoryImpl (
             }
         }
     }
+
+    override fun getGroupList(): List<String> {
+        return Files.list(Path(repositoryPath))
+            .map { it.fileName.toString() }
+            .toList()
+    }
+
+    override fun getGroupPoints(groupName: String): List<Pair<Double, Double>> {
+        val filePath = Path("$repositoryPath/$groupName")
+
+        if (Files.exists(filePath).not()) {
+            return emptyList()
+        }
+
+        return Files.readAllLines(filePath)
+            .map { it.split(",") }
+            .map { Pair(it[0].toDouble(), it[1].toDouble()) }
+    }
 }

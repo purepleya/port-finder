@@ -12,8 +12,8 @@ class ZeroSpeedPointGrouper (
     private val dailyZeroSpeedPointRepository: DailyZeroSpeedPointRepository,
     private val zeroSpeedPointGroupRepository: ZeroSpeedPointGroupRepository
 ) {
-    val LIMIT_DISTANCE = 0.6
-    val MINIMUM_POINT_COUNT = 3
+    val LIMIT_DISTANCE = 0.3 // km
+    val MINIMUM_POINT_COUNT = 3 // minimum number of points to form a group
 
     operator fun LocalDate.rangeTo(other: LocalDate) = DateProgression(this, other)
 
