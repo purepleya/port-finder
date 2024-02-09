@@ -46,4 +46,9 @@ class ZeroSpeedPointGroupRepositoryImpl (
             .map { it.split(",") }
             .map { Pair(it[0].toDouble(), it[1].toDouble()) }
     }
+
+    override fun clean() {
+        getGroupList().forEach { Files.deleteIfExists(Path("$repositoryPath/$it")) }
+    }
+
 }

@@ -6,4 +6,5 @@ interface ZeroSpeedPointGroupRepository {
     fun getGroupList(): List<String>
 
     fun getGroupPoints(group: String): List<Pair<Double, Double>>
+    fun clean()
 }

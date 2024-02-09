@@ -11,13 +11,20 @@ class GeoFenceGenerator (
     private val zeroSpeedPointGroupRepository: ZeroSpeedPointGroupRepository,
     private val geoFenceRepository: GeoFenceRepository
 ) {
+    private val BUFFER_RATIO = 0.0
+    val MINIMUM_POINT_COUNT = 5 // minimum number of points to form a group
 
     fun generateGeoFence() {
         clean()
         val groupNames = getGroupList()
 
         for (groupName in groupNames) {
-            val geoFence = generateGeoFence(groupName)
+            val points = getPoints(groupName)
+            if (!hasEnoughPoints(points)) {
+                continue
+            }
+
+            val geoFence = generateGeoFence(points)
 
             if (geoFence.isNotEmpty()) {
                 write(groupName, geoFence)
@@ -25,8 +32,7 @@ class GeoFenceGenerator (
         }
     }
 
-    fun generateGeoFence(groupName: String): List<Pair<Double, Double>> {
-        val points = getPoints(groupName)
+    fun generateGeoFence(points:  List<Pair<Double, Double>>): List<Pair<Double, Double>> {
         if (hasEnoughPoints(points)) {
             val geoFence = generate(points)
             return geoFence
@@ -40,7 +46,7 @@ class GeoFenceGenerator (
     }
 
     private fun hasEnoughPoints(points: List<Pair<Double, Double>>): Boolean {
-        return points.size >= 5
+        return points.size >= MINIMUM_POINT_COUNT
     }
 
     private fun getGroupList(): List<String> {
@@ -91,8 +97,8 @@ class GeoFenceGenerator (
         val width = Math.abs(maxX - minX)
         
         // 좌측 하단 꼭지점 부터 시계방향 (원래 마름모로 만들어야 하는데, 일단 평행사변형으로 만듬)
-        val x1 = minX - getBufferLength(width)
-        val y1 = slope * x1 + intercept - maxYDistance - getBufferLength(maxYDistance)
+        val x1 = minX - (width * BUFFER_RATIO)
+        val y1 = slope * x1 + intercept - maxYDistance - (maxYDistance * BUFFER_RATIO)
 
 //        원래 regression equation 그래프에 직교하는 그래프를 yc = -1/slope * x + b 라고 했을때
 //        아래 그래프와 직교하는 그래프의 b 값은
@@ -104,14 +110,14 @@ class GeoFenceGenerator (
 //        (-1/slope - slope) * x = intercept + maxYDistance + getBufferLength(maxYDistance) - y1 + (-1 / slope) * x1
 //        x = (intercept + maxYDistance + getBufferLength(maxYDistance) - y1 + (-1 / slope) * x1) / (-1/slope - slope)
 
-        val x2 = (intercept + maxYDistance + getBufferLength(maxYDistance) - y1 + (-1 / slope) * x1) / (-1/slope - slope)
-        val y2 = slope * x2 + intercept + maxYDistance + getBufferLength(maxYDistance)
+        val x2 = (intercept + maxYDistance + (maxYDistance * BUFFER_RATIO) - y1 + (-1 / slope) * x1) / (-1/slope - slope)
+        val y2 = slope * x2 + intercept + maxYDistance + (maxYDistance * BUFFER_RATIO)
 
-        val x3 = maxX + getBufferLength(width)
-        val y3 = slope * x3 + intercept + maxYDistance + getBufferLength(maxYDistance)
+        val x3 = maxX + (width * BUFFER_RATIO)
+        val y3 = slope * x3 + intercept + maxYDistance + (maxYDistance * BUFFER_RATIO)
 
         val x4 = x1 + Math.abs(x3 - x2)
-        val y4 = slope * x4 + intercept - maxYDistance - getBufferLength(maxYDistance)
+        val y4 = slope * x4 + intercept - maxYDistance - (maxYDistance * BUFFER_RATIO)
 
         return listOf(
             Pair(x1, y1),
@@ -119,11 +125,6 @@ class GeoFenceGenerator (
             Pair(x3, y3),
             Pair(x4, y4)
         )
-    }
-
-    fun getBufferLength(length: Double): Double {
-        val bufferRatio = 0.3
-        return length * bufferRatio
     }
 
     private fun write(groupName: String, geoFence: Collection<Pair<Double, Double>>) {

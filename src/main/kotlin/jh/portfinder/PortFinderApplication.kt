@@ -19,22 +19,15 @@ fun main(args: Array<String>) {
 	val context = runApplication<PortFinderApplication>(*args)
 
 //	collectDailyZeroSpeedPoint(context.getBean(DailyZeroSpeedPointCollector::class.java))
-	groupZeroSpeedPoint(context.getBean(ZeroSpeedPointGrouper::class.java))
-	generateGeoFence(context.getBean(GeoFenceGenerator::class.java))
-//	printGeoFence(context.getBean(GeoFenceRepository::class.java))
+//	groupZeroSpeedPoint(context.getBean(ZeroSpeedPointGrouper::class.java))
+//	generateGeoFence(context.getBean(GeoFenceGenerator::class.java))
+	printGeoFence(context.getBean(GeoFenceRepository::class.java))
 
-//	debugging(context.getBean(GeoFenceGenerator::class.java), "group-525")
 }
 
-fun debugging(geoFenceGenerator: GeoFenceGenerator, groupName: String) {
-	geoFenceGenerator.generateGeoFence(groupName)
-		.forEach {
-			println("{ lat: ${it.second}, lng: ${it.first} },")
-		}
-}
 
 fun printGeoFence(geoFenceRepository: GeoFenceRepository) {
-	val geoFences = geoFenceRepository.read(8000, 10000)
+	val geoFences = geoFenceRepository.read(6000, 9000)
 	println("[")
 	geoFences.forEach {
 		println("\t[")
@@ -65,7 +58,7 @@ fun collectDailyZeroSpeedPoint(dailyZeroSpeedPointCollector: DailyZeroSpeedPoint
 
 fun groupZeroSpeedPoint(zeroSpeedPointGrouper: ZeroSpeedPointGrouper) {
 	val year = 2023
-	val month = 10
+	val month = 11
 	val from = LocalDate.of(year, month, 1)
 //	val to = from
 	val to = from.plusMonths(1).minusDays(1)

@@ -3,55 +3,82 @@ package jh.portfinder.service
 import jh.portfinder.data.repository.dailyzerospeedpoint.DailyZeroSpeedPointRepository
 import jh.portfinder.data.repository.zerospeedpointgroup.ZeroSpeedPointGroupRepository
 import jh.portfinder.logger
+import jh.portfinder.model.PointGroup
 import jh.portfinder.util.DateProgression
 import jh.portfinder.util.EarthDistanceCalculator
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
-class ZeroSpeedPointGrouper (
+class
+ZeroSpeedPointGrouper (
     private val dailyZeroSpeedPointRepository: DailyZeroSpeedPointRepository,
-    private val zeroSpeedPointGroupRepository: ZeroSpeedPointGroupRepository
+    private val zeroSpeedPointGroupRepository: ZeroSpeedPointGroupRepository,
+    private val zeroSpeedPointGroupMerger: ZeroSpeedPointGroupMerger
 ) {
-    val LIMIT_DISTANCE = 0.4 // km
-    val MINIMUM_POINT_COUNT = 10 // minimum number of points to form a group
+    companion object {
+        const val LIMIT_DISTANCE = 0.3 // km
+    }
 
     operator fun LocalDate.rangeTo(other: LocalDate) = DateProgression(this, other)
     private val log = logger<ZeroSpeedPointGrouper>()
 
 
     fun group(from: LocalDate, to: LocalDate) {
-        val groups: MutableList<MutableSet<Pair<Double, Double>>> = mutableListOf()
+        var groups = readOldGroups()
 
         for (date in from..to) {
-            log.info("Grouping zero speed points for $date")
-            val points = dailyZeroSpeedPointRepository
-                            .read(date)
-                            .sortedWith(compareBy({ it.first }, { it.second }))
+            groups = group(groups, date)
+        }
+        groups = zeroSpeedPointGroupMerger.mergeGroups(groups)
+        write(from, to, groups)
+    }
 
-            for (point in points) {
-                var found = false
-                for (group in groups) {
-                    if (group.any { EarthDistanceCalculator.distance(it.second, it.first, point.second, point.first) < LIMIT_DISTANCE }) {
-                        group.add(point)
-                        found = true
-                        break
-                    }
-                }
+    private fun readOldGroups(): List<PointGroup> {
+        val groups = mutableListOf<PointGroup>()
+        zeroSpeedPointGroupRepository.getGroupList().forEach {
+            val points = zeroSpeedPointGroupRepository.getGroupPoints(it)
+            groups.add(PointGroup(points))
+        }
+        return groups
+    }
 
-                if (!found) {
-                    groups.add(mutableSetOf(point))
+    private fun group(groups: List<PointGroup>, date: LocalDate): List<PointGroup> {
+        log.info("Grouping zero speed points for $date")
+
+        val mutableGroupList = groups.toMutableList()
+        val points = dailyZeroSpeedPointRepository
+            .read(date)
+            .sortedWith(compareBy({ it.first }, { it.second }))
+
+        for (point in points) {
+            var found = false
+            for (group in mutableGroupList) {
+                if (group.points.any {
+                        EarthDistanceCalculator.distance(
+                            it.second,
+                            it.first,
+                            point.second,
+                            point.first
+                        ) < LIMIT_DISTANCE
+                    }) {
+                    group.addPoint(point)
+                    found = true
+                    break
                 }
+            }
+
+            if (!found) {
+                mutableGroupList.add(PointGroup(point))
             }
         }
 
-        val filteredGroups: List<Set<Pair<Double, Double>>> = groups.filter { it.size >= MINIMUM_POINT_COUNT }
-        write(from, to, filteredGroups)
+        return groups
     }
 
-
-    private fun write(from: LocalDate, to: LocalDate, groups: Collection<Set<Pair<Double, Double>>>) {
-        zeroSpeedPointGroupRepository.write(groups)
+    private fun write(from: LocalDate, to: LocalDate, groups: Collection<PointGroup>) {
+        zeroSpeedPointGroupRepository.clean()
+        zeroSpeedPointGroupRepository.write(groups.map { it.points })
     }
 
 }
